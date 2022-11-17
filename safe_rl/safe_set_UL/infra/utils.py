@@ -1,7 +1,6 @@
 import numpy as np
 from sklearn.svm import LinearSVC
 import matplotlib.pyplot as plt
-from tables.vlarray import is_idx
 
 def sample_states(num_states, env, CBF):
   current_num = 0

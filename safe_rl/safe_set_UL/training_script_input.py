@@ -1,11 +1,10 @@
 from barriers.FCN_u import FCN_u
-from barriers.FCN_log import FCN_log
+from barriers.FCN_tanh import FCN_tanh
 from barriers.inv_ped_CBF import inv_CBF
 from controllers.QP import QP_CBF_controller
 from envs.inv_ped import inv_ped
 from infra import utils
 import matplotlib.pyplot as plt
-from google.colab import files
 import numpy as np
 
 model = FCN_u(2, 2, 4, 1000, 'relu', 5e-3)

@@ -6,14 +6,13 @@ from controllers.QP import QP_CBF_controller
 from envs.inv_ped import inv_ped
 from infra import utils
 import matplotlib.pyplot as plt
-from google.colab import files
 import numpy as np
 
 model = FCN(2, 2, 4, 1000, 'relu', 5e-3)
 
 c_a, a, b, m, g, l = 0.2, 0.075, 0.15, 2, 10, 1
 u_min, u_max, x_min, x_max = -3, 3, [-0.3, -0.6], [0.3, 0.6]
-delta_t = 0.02
+delta_t = 0.1
 cbf1 = inv_CBF(c_a, a, b, m, g, l)
 env = inv_ped(g, m, l, u_min, u_max)
 normalized = False
@@ -85,10 +84,11 @@ z_nn = np.zeros((n, n))
 for i in range(n):
   for j in range(n):
     x = np.array([x1[i], x2[j]])
-    u_cbf = cbf_controller.forward(x, 0)
-    u_nn = NN_controller.forward(x, 0)
-    z_cbf[i, j] = u_cbf
-    z_nn[i, j] = u_nn
+    if cbf1.H(x) >= 0:
+      u_cbf = cbf_controller.forward(x, 0)
+      u_nn = NN_controller.forward(x, 0)
+      z_cbf[i, j] = u_cbf
+      z_nn[i, j] = u_nn
  
 fig = plt.figure(figsize=plt.figaspect(0.5))
 ax = fig.add_subplot(1, 2, 1, projection='3d')
