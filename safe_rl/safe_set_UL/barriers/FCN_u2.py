@@ -5,7 +5,7 @@ from torch import nn
 from torch import optim
 
 class FCN_u():
-  def __init__(self, input_size, output_size, n_layers, size, activation, lr):
+  def __init__(self, input_size, output_size, n_layers, size, activation, lr, h, n, delta_t, env):
     '''
     n_layers: number of hidden layers
     Size: dim of hidden layers
@@ -17,24 +17,20 @@ class FCN_u():
     self.loss_b = nn.MSELoss()
     self.optimizer_a = optim.Adam(self.FCN_a.parameters(),self.learning_rate)
     self.optimizer_b = optim.Adam(self.FCN_b.parameters(),self.learning_rate)
+    self.h = h
+    self.n = n
+    self.delta_t = delta_t
+    self.env = env
 
   def forward(self, x):
     x = ptu.from_numpy(x)
     return self.FCN_a(x), self.FCN_b(x)
 
-  def update(self, x, u, u_bar):
-    u = ptu.from_numpy(u)
-    u_bar = ptu.from_numpy(u_bar)
+  def update(self, x):
     a, b = self.forward(x)
-    diff = 1-u_bar * (a*u-b)
+    u = th.randn(self.n) * 0.5 + b/a
+    diff = self.h(self.env.next_state(x, u, self.delta_t))
     mask = th.where(diff > 0, 1, 0)
-    # print("u_bar", u_bar[0, :3])
-    # print("u", u[0, :3])
-    # print("a, b", a[0], b[0])
-    # print("au-b", (a*u-b)[0, :3])
-    # print("mask", mask[0, :3])
-    # print("diff", diff[0, :3], th.where(diff > 0, 1, 0)[0, :3])
-    # print("diff*mask", (diff*mask)[0, :3])
 
     self.optimizer_a.zero_grad()
     self.optimizer_b.zero_grad()
@@ -44,15 +40,9 @@ class FCN_u():
     self.optimizer_b.step()
     return loss
 
-  def get_loss(self, x, u, u_bar):
-    with th.no_grad():
-      u = ptu.from_numpy(u)
-      u_bar = ptu.from_numpy(u_bar)
-      a, b = self.forward(x)
-      diff = 1-u_bar * (a*u-b)
-      mask = th.where(diff > 0, 1, 0)
-      loss = th.sum((diff*mask)**2, dim=1).mean()
-    return loss
+  def get_loss(self, x):
+    u = th.randn(1) * 0.5 + b/a
+    
 
   def get_hyp(self, x):
     a, b = self.forward(x)

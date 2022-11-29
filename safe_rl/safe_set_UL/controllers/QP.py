@@ -18,8 +18,6 @@ class QP_CBF_controller():
                     )
     prob.solve()
     #print("target u and solved u", target_u, u.value)
-    if u.value == None:
-      print(x, t, a, b)
     if u.value < 0:
       return max(u.value, self.u_min)
     else:
@@ -30,4 +28,4 @@ class QP_CBF_controller():
         [1/(0.075**2), 0.5/(0.075*0.15)],
         [0.5/(0.075*0.15), 1/(0.15**2)]
     ])
-    return 1 - (x.T @ (A @ x))
+    return 0.3 - (x.T @ (A @ x))

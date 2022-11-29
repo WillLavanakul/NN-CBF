@@ -12,24 +12,24 @@ model = FCN(2, 2, 4, 1000, 'relu', 5e-3)
 
 c_a, a, b, m, g, l = 0.2, 0.075, 0.15, 2, 10, 1
 u_min, u_max, x_min, x_max = -3, 3, [-0.3, -0.6], [0.3, 0.6]
-delta_t = 0.1
+delta_t = 0.05
 cbf1 = inv_CBF(c_a, a, b, m, g, l)
 env = inv_ped(g, m, l, u_min, u_max)
 normalized = False
 
 print('Collecting data...')
 normalize = False
-data, labels, all_inputs, all_input_labels = utils.get_data(1000, 200, delta_t, env, cbf1)
+data, labels, all_inputs, all_input_labels = utils.get_data(1, 200, delta_t, env, cbf1)
 
 print("num data", len(data))
 print("states", data[:3])
 print('labels', labels[:3])
-train_size = 1000
-val_size = 100
+train_size = 1
+#val_size = 1
 epochs = 50
-batch_size = 32
+batch_size = 1
 train_data, train_labels = data[:train_size], labels[:train_size]
-val_data, val_labels = data[:val_size], labels[:val_size]
+#val_data, val_labels = data[:val_size], labels[:val_size]
 
 print("Starting training...")
 unnorm_losses_a = []
