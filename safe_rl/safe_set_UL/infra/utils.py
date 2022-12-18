@@ -36,8 +36,7 @@ def label_inputs_env(states, inputs, env, CBF, delta_t):
     for u in inputs[i]:
       controller = u_controller(u)
       x_0 = states[i]
-      t = np.linspace(0, delta_t)
-      y = env.run_system(x_0, t, controller)
+      y = env.run_system(x_0, delta_t, controller)
       x_final = y[-1, :]
       label_u.append(np.sign(CBF.H(x_final)))
     labels.append(label_u)
@@ -77,7 +76,7 @@ def fit_SVC(inputs, labels):
 def get_data(num_data, num_inputs, delta_t, env, CBF):
   states = sample_states(num_data, env, CBF)
   inputs = sample_inputs(states, num_inputs)
-  input_labels = label_inputs_env(states, inputs, env, CBF, delta_t)
+  input_labels = label_inputs(states, inputs, env, CBF, delta_t)
   labels = label_states(states, inputs, input_labels)
   return states, labels, inputs, input_labels
 

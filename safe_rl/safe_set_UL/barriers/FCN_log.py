@@ -4,7 +4,7 @@ import torch as th
 from torch import nn
 from torch import optim
 
-class FCN_tanh():
+class FCN_norm():
   def __init__(self, input_size, output_size, n_layers, size, activation, lr):
     '''
     n_layers: number of hidden layers
@@ -20,12 +20,12 @@ class FCN_tanh():
 
   def forward(self, x):
     x = ptu.from_numpy(x)
-    return self.FCN_a(x).squeeze(), th.tanh(self.FCN_b(x)).squeeze()
+    return self.FCN_a(x).squeeze(), self.FCN_b(x).squeeze()
 
   def update(self, x, labels):
-    a_labels = labels[:, 0] / np.abs(labels[:, 0])
-    b_labels = labels[:, 1] / np.abs(labels[:, 0])
-    print(a_labels[:3], b_labels[:3])
+    norms = np.linalg.norm(labels, axis=1)
+    a_labels = labels[:, 0] / norms
+    b_labels = labels[:, 1] / norms
     a_labels = ptu.from_numpy(a_labels)
     b_labels = ptu.from_numpy(b_labels)
     self.optimizer_a.zero_grad()
@@ -34,12 +34,12 @@ class FCN_tanh():
     loss_a.backward()
     self.optimizer_a.step()
     self.optimizer_b.zero_grad()
-    loss_b = self.loss_b(th.atanh(b), b_labels)
+    loss_b = self.loss_b(b, b_labels)
     loss_b.backward()
     self.optimizer_b.step()
     return loss_a, loss_b
 
   def get_hyp(self, x):
     a, b = self.forward(x)
-    a, b = np.sign(ptu.to_numpy(a)), np.arctanh(ptu.to_numpy(b))
+    a, b = ptu.to_numpy(a), ptu.to_numpy(b)
     return a, b

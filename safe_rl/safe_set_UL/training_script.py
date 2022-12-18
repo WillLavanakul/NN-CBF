@@ -1,6 +1,6 @@
 from barriers.FCN import FCN
 from barriers.FCN_double import FCN_double
-from barriers.FCN_tanh import FCN_tanh
+from barriers.FCN_log import FCN_norm
 from barriers.inv_ped_CBF import inv_CBF
 from controllers.QP import QP_CBF_controller
 from envs.inv_ped import inv_ped
@@ -8,33 +8,34 @@ from infra import utils
 import matplotlib.pyplot as plt
 import numpy as np
 
-model = FCN(2, 2, 4, 1000, 'relu', 5e-3)
+model = FCN_norm(2, 2, 4, 1000, 'relu', 5e-3)
 
 c_a, a, b, m, g, l = 0.2, 0.075, 0.15, 2, 10, 1
 u_min, u_max, x_min, x_max = -3, 3, [-0.3, -0.6], [0.3, 0.6]
 delta_t = 0.05
 cbf1 = inv_CBF(c_a, a, b, m, g, l)
-env = inv_ped(g, m, l, u_min, u_max)
+env = inv_ped(g, m, l, u_min, u_max, delta_t)
 normalized = False
+train_size = 5000
+num_inputs = 500
+batch_size = 32
 
 print('Collecting data...')
-normalize = False
-data, labels, all_inputs, all_input_labels = utils.get_data(1, 200, delta_t, env, cbf1)
+
+data, labels, all_inputs, all_input_labels = utils.get_data(train_size, num_inputs, delta_t, env, cbf1)
 
 print("num data", len(data))
 print("states", data[:3])
 print('labels', labels[:3])
-train_size = 1
-#val_size = 1
 epochs = 50
-batch_size = 1
 train_data, train_labels = data[:train_size], labels[:train_size]
 #val_data, val_labels = data[:val_size], labels[:val_size]
 
 print("Starting training...")
 unnorm_losses_a = []
 unnorm_losses_b = []
-model.FCN.train()
+model.FCN_a.train()
+model.FCN_b.train()
 for epoch in range(epochs):
   print("Epoch:", epoch)
   s_train_data, s_train_labels = utils.shuffle_data(train_data, train_labels)
@@ -110,9 +111,9 @@ plt.clf()
 # eval on control
 print("Running system...")
 
-system = inv_ped(10, 2, 1, -3, 3)
-x = [0.01, -0.05]
-t = np.linspace(0, 10, 100)
+system = inv_ped(10, 2, 1, -3, 3, delta_t)
+x = np.array([0.01, -0.05])
+t = 10
 y_NN = system.run_system(x, t, NN_controller)
 y_CBF = system.run_system(x, t, cbf_controller)
 plt.xlim(-0.3, 0.3)
