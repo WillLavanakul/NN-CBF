@@ -1,7 +1,7 @@
 from barriers.FCN import FCN
 from barriers.FCN_double import FCN_double
 from barriers.FCN_log import FCN_norm
-from barriers.FCN_u import FCN_u
+from barriers.FCN_u2 import FCN_u
 from barriers.inv_ped_CBF import inv_CBF
 from controllers.QP import QP_CBF_controller
 from envs.inv_ped import inv_ped
@@ -24,7 +24,7 @@ def train_model(delta_t):
     train_data, train_labels, inputs, input_labels = utils.get_data(train_size, input_size, delta_t, env, cbf1)
     epochs = 50
     batch_size = 32
-    model = FCN_u(2, 2, 5, 1000, 'relu', 5e-3)
+    model = FCN_u(2, 2, 5, 1000, 'relu', 5e-3, 100, env, cbf1, delta_t)
     model.FCN_a.train()
     model.FCN_b.train()
     for epoch in range(epochs):

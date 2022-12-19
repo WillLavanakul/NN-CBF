@@ -3,9 +3,10 @@ import numpy as np
 import torch as th
 from torch import nn
 from torch import optim
+from infra.utils import label_inputs
 
 class FCN_u():
-  def __init__(self, input_size, output_size, n_layers, size, activation, lr, h, n, delta_t, env):
+  def __init__(self, input_size, output_size, n_layers, size, activation, lr, d, env, cbf, delta_t):
     '''
     n_layers: number of hidden layers
     Size: dim of hidden layers
@@ -17,10 +18,10 @@ class FCN_u():
     self.loss_b = nn.MSELoss()
     self.optimizer_a = optim.Adam(self.FCN_a.parameters(),self.learning_rate)
     self.optimizer_b = optim.Adam(self.FCN_b.parameters(),self.learning_rate)
-    self.h = h
-    self.n = n
-    self.delta_t = delta_t
+    self.d = 10
     self.env = env
+    self.CBF = cbf
+    self.delta_t = delta_t
 
   def forward(self, x):
     x = ptu.from_numpy(x)
@@ -28,21 +29,29 @@ class FCN_u():
 
   def update(self, x):
     a, b = self.forward(x)
-    u = th.randn(self.n) * 0.5 + b/a
-    diff = self.h(self.env.next_state(x, u, self.delta_t))
-    mask = th.where(diff > 0, 1, 0)
-
+    mean = b/a
+    n = len(x)
+    u = th.normal(mean, 0.002, size=(n, self.d))
+    u_bar = label_inputs(x, u, self.env, self.CBF, self.delta_t)
+    u_hat = a*u-b
+    mask = th.where(u_bar < 0, 1, 0)
     self.optimizer_a.zero_grad()
     self.optimizer_b.zero_grad()
-    loss = th.sum((diff*mask)**2, dim=1).mean()
+    loss = th.mean(th.maximum(0, u_hat)*mask)
     loss.backward()
     self.optimizer_a.step()
     self.optimizer_b.step()
     return loss
 
-  def get_loss(self, x):
-    u = th.randn(1) * 0.5 + b/a
-    
+  def get_loss(self, x, u, u_bar):
+    with th.no_grad():
+      u = ptu.from_numpy(u)
+      u_bar = ptu.from_numpy(u_bar)
+      a, b = self.forward(x)
+      diff = -u_bar * (a*u-b)
+      mask = th.where(diff > 0, 1, 0)
+      loss = th.sum((diff*mask)**2, dim=1).mean()
+    return loss
 
   def get_hyp(self, x):
     a, b = self.forward(x)
