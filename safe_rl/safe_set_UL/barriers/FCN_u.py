@@ -22,21 +22,22 @@ class FCN_u():
     x = ptu.from_numpy(x)
     return self.FCN_a(x), self.FCN_b(x)
 
-  def update(self, x, u, u_bar):
+  def update(self, x, u, u_bar, epoch):
     u = ptu.from_numpy(u)
     u_bar = ptu.from_numpy(u_bar)
     a, b = self.forward(x)
-    print(a.shape, b.shape, u.shape, u_bar.shape)
+    if epoch > 90:
+      u_bar = th.where(u_bar < 0, -1.0, 0)
     diff = -u_bar * (a*u-b)
     mask = th.where(diff > 0, 1, 0)
 
     self.optimizer_a.zero_grad()
     self.optimizer_b.zero_grad()
-    loss = th.sum((diff*mask)**2, dim=1).mean()
+    loss = th.sum((diff*mask), dim=1).mean()
     loss.backward()
     self.optimizer_a.step()
     self.optimizer_b.step()
-    return loss
+    return loss, loss
 
   def get_loss(self, x, u, u_bar):
     with th.no_grad():

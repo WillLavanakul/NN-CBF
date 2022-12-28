@@ -80,10 +80,10 @@ def get_data(num_data, num_inputs, delta_t, env, CBF):
   labels = label_states(states, inputs, input_labels)
   return states, labels, inputs, input_labels
 
-def shuffle_data(data, labels):
+def shuffle_data(data, labels, inputs, input_labels):
   idx = np.arange(len(data))
   np.random.shuffle(idx)
-  return data[idx], labels[idx]
+  return data[idx], labels[idx], inputs[idx], input_labels[idx]
 
 def shuffle_data_u(data, inputs, input_labels):
   idx = np.arange(len(data))

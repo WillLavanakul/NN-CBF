@@ -3,7 +3,7 @@ import numpy as np
 import torch as th
 from torch import nn
 from torch import optim
-from infra.utils import label_inputs
+from infra.utils import label_inputs, get_data
 
 class FCN_u():
   def __init__(self, input_size, output_size, n_layers, size, activation, lr, d, env, cbf, delta_t):
@@ -31,17 +31,21 @@ class FCN_u():
     a, b = self.forward(x)
     mean = b/a
     n = len(x)
-    u = th.normal(mean, 0.002, size=(n, self.d))
+    u = th.normal(mean.detach(), 1).numpy()
+    _, _, inputs, input_labels = get_data(n, self.d, self.delta_t, self.env, self.CBF)
     u_bar = label_inputs(x, u, self.env, self.CBF, self.delta_t)
-    u_hat = a*u-b
-    mask = th.where(u_bar < 0, 1, 0)
+    u = th.tensor(inputs)
+    u_bar = th.tensor(u_bar)
+    diff = -u_bar * (a*u-b)
+    mask = th.where(diff > 0, 1, 0)
     self.optimizer_a.zero_grad()
     self.optimizer_b.zero_grad()
-    loss = th.mean(th.maximum(0, u_hat)*mask)
+    #loss = th.mean(th.maximum(th.zeros_like(u_hat), -u_bar*u_hat))
+    loss = th.sum((diff*mask)**2, dim=1).mean()
     loss.backward()
     self.optimizer_a.step()
     self.optimizer_b.step()
-    return loss
+    return loss, loss
 
   def get_loss(self, x, u, u_bar):
     with th.no_grad():

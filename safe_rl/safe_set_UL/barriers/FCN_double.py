@@ -20,7 +20,7 @@ class FCN_double():
 
   def forward(self, x):
     x = ptu.from_numpy(x)
-    return self.FCN_a(x).squeeze(), self.FCN_b(x).squeeze()
+    return self.FCN_a(x), self.FCN_b(x)
 
   def update(self, x, labels):
     a_labels = labels[:, 0]
@@ -37,6 +37,29 @@ class FCN_double():
     loss_b.backward()
     self.optimizer_b.step()
     return loss_a, loss_b
+
+  def update2(self, x, inputs, input_labels):
+    inputs = th.tensor(inputs)
+    a, b = self.forward(x)
+    u_hat = a*th.tensor(inputs)-b
+    u_bar = th.tensor(input_labels)
+    #mask = th.where(u_bar < 0, 1.0, 0.0)
+    diff = -u_bar*u_hat
+    mask = th.where(diff > 0, 1, 0)
+    # print("inputs", inputs)
+    # print("input_labels", input_labels)
+    # print("diff", diff)
+    # print("mask", mask)
+
+    self.optimizer_a.zero_grad()
+    self.optimizer_b.zero_grad()
+    loss = th.sum((diff*mask), dim=1).mean()
+    loss.backward()
+    self.optimizer_a.step()
+    self.optimizer_b.step()
+    
+    return loss, loss
+
 
   def get_hyp(self, x):
     a, b = self.forward(x)
