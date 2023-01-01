@@ -44,7 +44,7 @@ class FCN_double():
     u_hat = a*th.tensor(inputs)-b
     u_bar = th.tensor(input_labels)
     #mask = th.where(u_bar < 0, 1.0, 0.0)
-    diff = -u_bar*u_hat
+    diff = 1-u_bar*u_hat
     mask = th.where(diff > 0, 1, 0)
     # print("inputs", inputs)
     # print("input_labels", input_labels)
